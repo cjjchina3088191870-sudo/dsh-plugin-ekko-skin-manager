@@ -9,7 +9,7 @@
 推荐一次安装管理器与初音主题：
 
 ```sh
-dsh plugin --profile web add dsh-plugin-ekko-skin-manager@0.1.3 dsh-plugin-miku-theme@0.2.3
+dsh plugin --profile web add dsh-plugin-ekko-skin-manager@0.1.3 dsh-plugin-miku-theme@0.2.3 --registry=https://registry.npmjs.org
 ```
 
 刷新 DSH 网页后，全新浏览器默认启用可用主题。通过 **账号菜单 → 设置 → Ekko 皮肤** 切换外观、开关人物与照片、调整背景浓度。profile 名称不同，请将 `web` 改为实际名称。
@@ -17,7 +17,7 @@ dsh plugin --profile web add dsh-plugin-ekko-skin-manager@0.1.3 dsh-plugin-miku-
 只想先安装管理器：
 
 ```sh
-dsh plugin --profile web add dsh-plugin-ekko-skin-manager@0.1.3
+dsh plugin --profile web add dsh-plugin-ekko-skin-manager@0.1.3 --registry=https://registry.npmjs.org
 ```
 
 没有主题时保留原生界面，管理页面仍可打开，不会卡在加载状态。玫瑰为可选主题，未安装时不会影响初音。明确选择过“原生界面”时会尊重该选择。
@@ -39,6 +39,8 @@ dsh plugin --profile web add ./dsh-plugin-ekko-skin-manager-0.1.3.tgz ./dsh-plug
 ```
 
 包内含完整构建结果；安装与运行无需 Ekko 源码、私有目录、开发依赖或 `prepare` 脚本。
+
+npm 安装命令指定官方源，避免新版本尚未同步到镜像时出现 `No matching version found`。
 
 ## 使用与更新
 
