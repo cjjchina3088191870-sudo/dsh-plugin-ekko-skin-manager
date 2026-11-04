@@ -1,0 +1,76 @@
+{
+  "name": "dsh-plugin-ekko-skin-manager",
+  "version": "0.1.3",
+  "description": "有菜玫瑰与初音未来专用皮肤管理器，互斥挂载、保留草稿及主题偏好",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "src",
+    "scripts",
+    "test",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "design-qa.md",
+    "THIRD_PARTY_LICENSES"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.1-rc.5 <0.3.0-0"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "0.27.7",
+    "yaml": "2.9.0"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-theme",
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-conversation"
+      ]
+    }
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager.git"
+  },
+  "homepage": "https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager#readme",
+  "bugs": {
+    "url": "https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "skin-manager",
+    "theme"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
+}

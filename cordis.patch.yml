@@ -1,0 +1,6 @@
+- insert:
+    - id: ekko-skin-manager
+      name: dsh-plugin-ekko-skin-manager
+      disabled: false
+      config:
+        defaultSkin: miku
