@@ -14,14 +14,14 @@
  body[data-ekko-mobile-nav] .ekko-mobile-navigation button:active{box-shadow:inset 1px 2px 5px var(--ekko-shadow);}
  body[data-ekko-mobile-nav='corner'] .ekko-mobile-navigation{top:calc(env(safe-area-inset-top,0px) + 7px);left:9px;}
  body[data-ekko-mobile-nav='corner'] :is(.ekko-mobile-actions,.ekko-mobile-footer){display:none;}
- body[data-ekko-mobile-nav='corner'] [data-ekko-mobile-frame]{--dsh-frame-leading-clearance:62px;}
+ /* Set clearance on the content column so native drawer/platform frame rules cannot override it. */
+ body[data-ekko-mobile-nav='corner'] [data-ekko-mobile-frame] [data-ekko-mobile-center]{--dsh-frame-leading-clearance:62px;}
  body[data-ekko-mobile-nav='corner'] :is(.miku-welcome-brand,.rose-welcome-brand){padding-left:48px;}
  body[data-ekko-mobile-nav='corner'] :is(.miku-mark,.rose-mark){display:none;}
  body[data-ekko-mobile-nav='rail'] .ekko-mobile-navigation{inset:0 auto 0 0;width:60px;flex-direction:column;gap:10px;padding:calc(env(safe-area-inset-top,0px) + 13px) 7px max(10px,env(safe-area-inset-bottom,0px));background:var(--ekko-panel);border-right:1px solid var(--ekko-rim);box-shadow:inset -2px 0 0 var(--ekko-shine),inset -4px 0 0 var(--ekko-rim-soft);}
  body[data-ekko-mobile-nav='rail'] .ekko-mobile-actions{display:flex;flex:1;min-height:0;flex-direction:column;gap:10px;padding:0 0 4px;overflow:auto;scrollbar-width:none;}
  body[data-ekko-mobile-nav='rail'] .ekko-mobile-footer{display:flex;flex:none;padding-top:5px;border-top:1px solid var(--ekko-rim-soft);}
- body[data-ekko-mobile-nav='rail'] [data-ekko-mobile-frame] [data-ekko-mobile-center]{margin-inline-start:60px;}
- body[data-ekko-mobile-nav='rail'] [data-ekko-mobile-frame]{--dsh-frame-leading-clearance:0px;}
+ body[data-ekko-mobile-nav='rail'] [data-ekko-mobile-frame] [data-ekko-mobile-center]{margin-inline-start:60px;--dsh-frame-leading-clearance:0px;}
  /* The native drawer stays inert while closed. Only our launchers remain visible. */
  body[data-ekko-mobile-nav] [data-ekko-mobile-frame] [data-shell-leading]{display:none;}
  body[data-ekko-mobile-nav] [data-ekko-mobile-frame] [data-ekko-mobile-drawer]{z-index:80;background:var(--ekko-panel);box-shadow:12px 0 30px var(--ekko-shadow);}
