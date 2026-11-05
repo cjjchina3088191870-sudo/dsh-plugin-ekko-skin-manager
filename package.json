@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-ekko-skin-manager",
   "version": "0.1.5",
-  "description": "有菜玫瑰与初音未来专用皮肤管理器，互斥挂载、保留草稿及主题偏好",
+  "description": "DeepSeek Harness 皮肤管理器，支持主题切换、手机导航与个性化外观设置",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
