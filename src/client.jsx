@@ -1,6 +1,7 @@
 import React,{useEffect,useSyncExternalStore}from'react';
 import{createController,readSelection,SELECTION_KEY}from'./controller.mjs';
 import{STYLES}from'./generated.mjs';
+import{createMobileNavigation}from'./mobile-navigation.mjs';
 export const inject=['slots','theme','layout'];
 const NAMES={rose:{zh:'有菜玫瑰',en:'Arina Rose'},miku:{zh:'初音未来',en:'Hatsune Miku'}};
 const COPY={
@@ -10,6 +11,7 @@ const COPY={
 const language=()=>/^zh/i.test(document.documentElement.lang||navigator.language)?'zh':'en';
 export function apply(ctx){
  const storage=window.localStorage,imageCache=new Map();let alive=true,catalog=null,loadError=null,view,preferenceRevision=0;
+ const navigation=createMobileNavigation({layout:ctx.get('layout')});
  const listeners=new Set();
  const prepare=provider=>Promise.all([...new Set(Object.values(provider.assets))].filter(url=>!url.startsWith('data:')).map(url=>{
   if(!imageCache.has(url))imageCache.set(url,new Promise((resolve,reject)=>{
@@ -18,7 +20,7 @@ export function apply(ctx){
   }).catch(error=>{imageCache.delete(url);throw error;}));return imageCache.get(url);
  }));
  const controller=createController({storage,prepare,mount(provider){const fiber=ctx.plugin(provider.plugin);return{ready:()=>fiber.await(),dispose:()=>fiber.dispose()};}});
- const refresh=()=>{view={catalog,error:loadError,presentation:controller.getSnapshot(),preferenceRevision};for(const fn of listeners)fn();};
+ const refresh=()=>{const presentation=controller.getSnapshot(),provider=controller.provider(presentation.selected);navigation.update(provider?{skin:provider.id,mode:provider.readSettings(storage).mobileNav,mark:provider.assets.mark||provider.assets.rose}:null);view={catalog,error:loadError,presentation,preferenceRevision};for(const fn of listeners)fn();};
  const unsubscribe=controller.subscribe(refresh);refresh();
  ctx.provide('ekkoSkins',controller);
  const style=document.createElement('style');style.dataset.ekkoSkinManager='';style.textContent=STYLES;document.head.append(style);
@@ -56,7 +58,8 @@ export function apply(ctx){
    })}</div>
    <div className="ekko-skin-toolbar"><span>{p.busy?c.switching:(id==='default'?c.native:NAMES[id]?.[lang])}</span><button type="button" className="ekko-skin-button" disabled={id==='default'||p.busy} onClick={()=>choose('default')}>{c.native}</button></div>
    {p.error&&<div className="ekko-skin-error" role="alert">{p.error}<button type="button" className="ekko-skin-button" onClick={()=>choose(p.desired)}>{c.retry}</button></div>}
-   {prefs&&<div className="ekko-skin-options"><div className="ekko-skin-toolbar"><h3>{NAMES[id][lang]} · {c.options}</h3><button type="button" className="ekko-skin-button" disabled={p.busy} onClick={()=>setPreference(id,{artwork:true,companion:true,polaroid:true,opacity:.12})}>{c.reset}</button></div>
+   {prefs&&<div className="ekko-skin-options"><div className="ekko-skin-toolbar"><h3>{NAMES[id][lang]} · {c.options}</h3><button type="button" className="ekko-skin-button" disabled={p.busy} onClick={()=>setPreference(id,{artwork:true,companion:true,polaroid:true,opacity:.12,mobileNav:'corner'})}>{c.reset}</button></div>
+    <label className="ekko-skin-option"><span>{lang==='zh'?'手机导航方式':'Phone navigation'}<small>{lang==='zh'?'竖屏手机生效，两个主题分别保存':'Portrait phones; saved separately for each skin'}</small></span><select aria-label={lang==='zh'?'手机导航方式':'Phone navigation'} value={prefs.mobileNav||'corner'} disabled={p.busy} onChange={e=>setPreference(id,{mobileNav:e.target.value})}><option value="corner">{lang==='zh'?'左上角按钮 + 抽屉':'Corner button + drawer'}</option><option value="rail">{lang==='zh'?'左侧纵向图标栏':'Vertical icon rail'}</option></select></label>
     {['artwork','companion','polaroid'].map(key=><label className="ekko-skin-option" key={key}><span>{c[key]}</span><input type="checkbox" checked={prefs[key]} disabled={p.busy} onChange={e=>setPreference(id,{[key]:e.target.checked})}/></label>)}
     <label className="ekko-skin-option"><span>{c.opacity}<small>{Math.round(prefs.opacity*100)}%</small></span><input type="range" min=".04" max=".24" step=".01" value={prefs.opacity} disabled={p.busy} onChange={e=>setPreference(id,{opacity:Number(e.target.value)})}/></label>
    </div>}
@@ -69,5 +72,5 @@ export function apply(ctx){
  const onStorage=e=>{if(e.key===SELECTION_KEY)void controller.choose(readSelection(storage,catalog?.defaultSkin),{persist:false});if(e.key?.startsWith('dsh:ekko-')){preferenceRevision++;refresh();}};
  const onPreferences=()=>{preferenceRevision++;refresh();};window.addEventListener('storage',onStorage);window.addEventListener('dsh:ekko-skin-preferences',onPreferences);
  void load();
- ctx.effect(()=>async()=>{alive=false;section?.();locale.disconnect();appearance.disconnect();window.removeEventListener('storage',onStorage);window.removeEventListener('dsh:ekko-skin-preferences',onPreferences);unsubscribe();await controller.dispose();style.remove();listeners.clear();imageCache.clear();},'ekko-skins: controller, section and presentation cleanup');
+ ctx.effect(()=>async()=>{alive=false;section?.();locale.disconnect();appearance.disconnect();window.removeEventListener('storage',onStorage);window.removeEventListener('dsh:ekko-skin-preferences',onPreferences);unsubscribe();navigation.dispose();await controller.dispose();style.remove();listeners.clear();imageCache.clear();},'ekko-skins: controller, section and presentation cleanup');
 }
