@@ -16,6 +16,8 @@
     "test",
     "cordis.patch.yml",
     "README.md",
+    "preview",
+    "screenshots.json",
     "LICENSE",
     "design-qa.md",
     "THIRD_PARTY_LICENSES"
