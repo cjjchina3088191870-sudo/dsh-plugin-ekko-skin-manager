@@ -24,7 +24,11 @@ test('native owner APIs, streaming upload, range playback and shared host surviv
  const rows=ctx.webServer.collectIndexInjections(ctx.connection.browserPeer).filter(r=>r.text?.includes('globalThis.__EKKO_STARTUP_CONFIG__='));assert.equal(rows.length,1);
  assert.equal(shared.requestBodyMode({method:'GET',url:new URL(url+'/api/ekko-skins/boot')}),'buffered');assert.equal(shared.requestBodyMode({method:'POST',url:new URL(url+'/api/ekko-skins/upload')}),'streaming');
  assert.equal((await shared.fetch(new Request(url+'/api/ekko-skins/boot'),{principal:{kind:'agent'}})).status,403);
- const {nativeCookie}=await import('/root/.dsh/profiles/web/node_modules/dsh-public-login/lib/server.js');const cookie=await nativeCookie(ctx.credentials,new URL(url).host);
+ let cookie;
+ const launch=new URL(ctx.connection.authenticatedUrl(url));
+ assert.equal(ctx.connection.authorizeIndex({method:'GET',url:launch.pathname+launch.search,headers:{host:new URL(url).host}},{writeHead(status,headers){assert.equal(status,303);cookie=headers['set-cookie'].split(';')[0];},end(){}}),false);
+ assert.ok(cookie);
+
  const call=(path,body,headers={})=>fetch(url+'/api/ekko-skins/'+path,{headers:{cookie,origin:url,...body?{'content-type':'application/json'}:{},...headers},...body?{method:'POST',body:typeof body==='string'||Buffer.isBuffer(body)?body:JSON.stringify(body)}:{}});
  assert.equal((await fetch(url+'/api/ekko-skins/boot')).status,401);
  const boot=await(await call('boot')).json();assert.equal(boot.revision,0);
