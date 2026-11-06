@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-ekko-skin-manager",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "DeepSeek Harness 皮肤管理器，支持主题切换、手机导航与个性化外观设置",
   "type": "module",
   "main": "./lib/index.js",
@@ -39,7 +39,8 @@
   },
   "devDependencies": {
     "esbuild": "0.27.7",
-    "yaml": "2.9.0"
+    "yaml": "2.9.0",
+    "jsdom": "27.4.0"
   },
   "dsh": {
     "manifestVersion": 1,

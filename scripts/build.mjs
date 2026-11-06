@@ -1,8 +1,10 @@
 import{readFile,writeFile,mkdir}from'node:fs/promises';import{createRequire}from'node:module';import{fileURLToPath}from'node:url';import path from'node:path';
 const root=path.resolve(fileURLToPath(new URL('..',import.meta.url))),require=createRequire(process.env.DSH_SKIN_MANAGER_TOOLCHAIN||path.join(root,'package.json'));const{build}=require('esbuild');await mkdir(path.join(root,'lib'),{recursive:true});
+const boot=await build({entryPoints:[path.join(root,'src/boot-entry.mjs')],bundle:true,platform:'browser',format:'iife',target:'es2022',minify:true,write:false,logLevel:'warning'});
+await writeFile(path.join(root,'src/boot-generated.mjs'),'export const BOOT_SCRIPT='+JSON.stringify(boot.outputFiles[0].text)+';\n');
 await writeFile(path.join(root,'src/generated.mjs'),'export const STYLES='+JSON.stringify((await readFile(path.join(root,'src/style.css'),'utf8'))+'\n'+(await readFile(path.join(root,'src/mobile-navigation.css'),'utf8'))+'\n'+(await readFile(path.join(root,'src/mobile-composer.css'),'utf8')))+';\n');
-await build({entryPoints:[path.join(root,'src/index.mjs')],bundle:true,platform:'node',format:'esm',target:'node22',outfile:path.join(root,'lib/index.js'),logLevel:'warning'});
-const result=await build({entryPoints:[path.join(root,'src/client.jsx')],bundle:true,platform:'browser',format:'cjs',target:'es2022',external:['react'],write:false,logLevel:'warning'});
+await build({entryPoints:[path.join(root,'src/host-entry.mjs')],bundle:true,platform:'node',format:'esm',target:'node22',outfile:path.join(root,'lib/index.js'),logLevel:'warning'});
+const result=await build({entryPoints:[path.join(root,'src/client-entry.mjs')],bundle:true,platform:'browser',format:'cjs',target:'es2022',external:['react'],write:false,logLevel:'warning'});
 await writeFile(path.join(root,'lib/client.js'),'window.__ModuleLoader__.load({id:"dsh-plugin-ekko-skin-manager",factory:(require)=>{const module={exports:{}};const exports=module.exports;\n'+result.outputFiles[0].text+'\nreturn module.exports;}});\n');console.log('Built Ekko skin manager.');
 
 await build({entryPoints:[path.join(root,'src/migrate.mjs')],bundle:true,platform:'node',format:'esm',target:'node22',alias:{yaml:require.resolve('yaml')},banner:{js:"import {createRequire as _createRequire} from 'node:module'; const require=_createRequire(import.meta.url);"},outfile:path.join(root,'lib/migrate.js'),logLevel:'warning'});

@@ -1,4 +1,5 @@
 import React,{useEffect,useSyncExternalStore}from'react';
+import {VideoSettings} from './video-settings.jsx';
 import{createController,readSelection,SELECTION_KEY}from'./controller.mjs';
 import{STYLES}from'./generated.mjs';
 import{createMobileNavigation}from'./mobile-navigation.mjs';
@@ -10,7 +11,7 @@ const COPY={
 };
 const language=()=>/^zh/i.test(document.documentElement.lang||navigator.language)?'zh':'en';
 export function apply(ctx){
- const storage=window.localStorage,imageCache=new Map();let alive=true,catalog=null,loadError=null,view,preferenceRevision=0;
+ const storage=window.localStorage,imageCache=new Map();let alive=true,catalog=null,loadError=null,view,preferenceRevision=0,initialized=false;
  const navigation=createMobileNavigation({layout:ctx.get('layout')});
  const listeners=new Set();
  const prepare=provider=>Promise.all([...new Set(Object.values(provider.assets))].filter(url=>!url.startsWith('data:')).map(url=>{
@@ -26,7 +27,7 @@ export function apply(ctx){
  const style=document.createElement('style');style.dataset.ekkoSkinManager='';style.textContent=STYLES;document.head.append(style);
  async function load(){
   loadError=null;refresh();
-  try{const response=await fetch('./ekko-skins/catalog',{credentials:'same-origin'});if(!response.ok)throw Error('catalog');const result=await response.json();if(!Array.isArray(result.skins))throw Error('catalog');if(!alive)return;catalog=result;refresh();await controller.initialize(result.defaultSkin,result.skins.filter(s=>s.available).map(s=>s.id));}
+  try{const response=await fetch('./ekko-skins/catalog',{credentials:'same-origin'});if(!response.ok)throw Error('catalog');const result=await response.json();if(!Array.isArray(result.skins))throw Error('catalog');if(!alive)return;catalog=result;refresh();if(!initialized){initialized=true;await controller.initialize(result.defaultSkin,result.skins.filter(s=>s.available).map(s=>s.id));}else{const current=controller.getSnapshot().desired;if(current!=='default'&&!result.skins.some(s=>s.id===current&&s.available))await controller.choose(result.defaultSkin);}}
   catch{if(alive){loadError=COPY[language()].loadFailed;refresh();}}
  }
  function setPreference(id,patch){
@@ -63,6 +64,7 @@ export function apply(ctx){
     {['artwork','companion','polaroid'].map(key=><label className="ekko-skin-option" key={key}><span>{c[key]}</span><input type="checkbox" checked={prefs[key]} disabled={p.busy} onChange={e=>setPreference(id,{[key]:e.target.checked})}/></label>)}
     <label className="ekko-skin-option"><span>{c.opacity}<small>{Math.round(prefs.opacity*100)}%</small></span><input type="range" min=".04" max=".24" step=".01" value={prefs.opacity} disabled={p.busy} onChange={e=>setPreference(id,{opacity:Number(e.target.value)})}/></label>
    </div>}
+   {prefs&&<VideoSettings key={id} skin={id}/>}
   </section>;
  }
  function registerSection(){return ctx.slots.inject('settings.section',()=>ctx.slots.register({name:'settings.section',id:'ekko-skins',order:115,label:()=>COPY[language()].nav},Panel));}
@@ -72,5 +74,6 @@ export function apply(ctx){
  const onStorage=e=>{if(e.key===SELECTION_KEY)void controller.choose(readSelection(storage,catalog?.defaultSkin),{persist:false});if(e.key?.startsWith('dsh:ekko-')){preferenceRevision++;refresh();}};
  const onPreferences=()=>{preferenceRevision++;refresh();};window.addEventListener('storage',onStorage);window.addEventListener('dsh:ekko-skin-preferences',onPreferences);
  void load();
- ctx.effect(()=>async()=>{alive=false;section?.();locale.disconnect();appearance.disconnect();window.removeEventListener('storage',onStorage);window.removeEventListener('dsh:ekko-skin-preferences',onPreferences);unsubscribe();navigation.dispose();await controller.dispose();style.remove();listeners.clear();imageCache.clear();},'ekko-skins: controller, section and presentation cleanup');
+ const catalogTimer=setInterval(()=>void load(),15000);const reloadCatalog=()=>void load();window.addEventListener('focus',reloadCatalog);
+ ctx.effect(()=>async()=>{alive=false;clearInterval(catalogTimer);window.removeEventListener('focus',reloadCatalog);section?.();locale.disconnect();appearance.disconnect();window.removeEventListener('storage',onStorage);window.removeEventListener('dsh:ekko-skin-preferences',onPreferences);unsubscribe();navigation.dispose();await controller.dispose();style.remove();listeners.clear();imageCache.clear();},'ekko-skins: controller, section and presentation cleanup');
 }

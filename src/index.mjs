@@ -3,6 +3,9 @@ import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 import {dirname,join} from 'node:path';
 import {pathToFileURL} from 'node:url';
+import {createMediaStore} from './boot-media.mjs';
+import {BOOT_SCRIPT} from './boot-generated.mjs';
+import {toInlineJson} from './vendor/video-route.mjs';
 const require=createRequire(import.meta.url);
 export const PREFIX='/ekko-skins';
 const PACKAGES={rose:'dsh-plugin-rose-theme',miku:'dsh-plugin-miku-theme'};
@@ -14,7 +17,7 @@ export function createHandler({resolvePackage=name=>dirname(require.resolve(name
   const installed=skins.filter(s=>s.available).map(s=>s.id);
   const preferred=['rose','miku','default'].includes(defaultSkin)?defaultSkin:'miku';
   const selected=preferred==='default'||installed.includes(preferred)?preferred:(installed[0]||'default');
-  return{version:'0.1.3',defaultSkin:selected,skins};
+  return{version:'0.2.0',defaultSkin:selected,skins};
  }
  return async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405,{Allow:'GET, HEAD'}).end();return;}
@@ -46,5 +49,20 @@ export function createHandler({resolvePackage=name=>dirname(require.resolve(name
  };
 }
 export function apply(ctx,config={}){
- ctx.inject(['webServer','profileContext'],child=>{const resolver=createRequire(pathToFileURL(join(child.get('profileContext').dir,'package.json')));child.effect(()=>child.get('webServer').register({kind:'prefix',path:PREFIX,handler:createHandler({defaultSkin:config.defaultSkin,resolvePackage:name=>dirname(resolver.resolve(name+'/package.json'))})}));});
+ // Register synchronously: Desktop collects index contributions once at startup.
+ // Inline code is fail-open and cannot reject DSH's native script loading promise.
+ ctx.on('webserver/index-inject',table=>table.push({kind:'script',placement:'body',text:'globalThis.__EKKO_STARTUP_CONFIG__='+toInlineJson({defaultSkin:config.defaultSkin||'miku'})+';\n'+BOOT_SCRIPT}));
+ ctx.inject(['webServer','profileContext','connection'],async child=>{
+  const profile=child.get('profileContext'),resolver=createRequire(pathToFileURL(join(profile.dir,'package.json')));
+  const resolvePackage=name=>dirname(resolver.resolve(name+'/package.json'));
+  const media=await createMediaStore({directory:join(profile.dir,'ekko-skins-media'),resolvePackage:id=>resolvePackage(PACKAGES[id])});
+  child.effect(()=>()=>media.close(),'ekko-skins: private media store');
+  child.effect(()=>child.get('webServer').register({kind:'prefix',path:PREFIX,handler:createHandler({defaultSkin:config.defaultSkin,resolvePackage})}));
+  for(const [path,methods,fetch,requestBody]of [
+   ['/api/ekko-skins/boot',['GET'],media.settings,'buffered'],
+   ['/api/ekko-skins/boot-settings',['POST'],media.settings,'streaming'],
+   ['/api/ekko-skins/upload',['POST'],media.upload,'streaming'],
+   ['/api/ekko-skins/video',['GET','HEAD'],media.video,'buffered']
+  ])child.effect(()=>child.get('connection').fetch.register({path,methods,requestBody,fetch}));
+ });
 }
