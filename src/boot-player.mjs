@@ -15,12 +15,17 @@ export const BOOT_CSS=`
 const text=()=>/^zh/i.test(document.documentElement.lang||navigator.language)?{
  skip:'跳过视频',sound:'开启声音',mute:'静音',play:'播放视频',loading:'正在加载启动视频…',hint:'点击画面或按 Esc 跳过',title:'主题启动视频'
 }:{skip:'Skip video',sound:'Enable sound',mute:'Mute',play:'Play video',loading:'Loading startup video…',hint:'Click the picture or press Esc to skip',title:'Theme startup video'};
+export const MOBILE_SCREEN='(max-width: 768px), (hover: none) and (pointer: coarse) and (max-height: 768px)';
+export function selectBootVideo(entry,mobile=false){
+ if(!entry)return entry;
+ return mobile&&entry.mobile?{...entry,...entry.mobile,device:'mobile'}:{...entry,device:mobile?'mobile':'desktop'};
+}
 export function playBoot(skin,options,{preview=false}={}){
  if(!options?.url||options.available===false||(!preview&&!options.enabled))return Promise.resolve();
  if(!preview&&window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)return Promise.resolve();
  if(document.querySelector('.ekko-boot'))return Promise.resolve();
  let c=text();const overlay=document.createElement('section'),video=document.createElement('video');
- overlay.className='ekko-boot';overlay.dataset.skin=skin;overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label',c.title);
+ overlay.className='ekko-boot';overlay.dataset.skin=skin;overlay.dataset.device=options.device||'desktop';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label',c.title);
  const style=document.createElement('style');style.dataset.ekkoBoot='';style.textContent=BOOT_CSS;document.head.append(style);
  video.playsInline=true;video.preload='auto';video.muted=!options.sound;video.volume=options.volume??.65;video.style.objectFit=options.fit||'cover';video.src=options.url;
  const button=(label,cl)=>{const b=document.createElement('button');b.type='button';b.textContent=label;b.className=cl||'';return b;};
@@ -68,6 +73,6 @@ export function bootOnce({defaultSkin='miku'}={}){
  if(!['rose','miku'].includes(skin))return;
  void(async()=>{try{
   const response=await fetch('./api/ekko-skins/boot',{credentials:'same-origin',signal:AbortSignal.timeout(3000)});
-  if(!response.ok)return;const state=await response.json();await playBoot(skin,state.skins?.[skin]);
+  if(!response.ok)return;const state=await response.json();await playBoot(skin,selectBootVideo(state.skins?.[skin],Boolean(window.matchMedia?.(MOBILE_SCREEN).matches)));
  }catch{/* The startup decoration must never reject the native boot promise. */}})();
 }

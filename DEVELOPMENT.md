@@ -7,3 +7,8 @@ After changing the core, build this package, synchronize its source and license 
 Run `node --test test/*.test.mjs`; set `DSH_MODULES` to the installed `@deepseek-ai` package directory for the real Context, HTTP bridge and owner-ACL checks. The native integration fixture expects the two built theme repositories alongside this checkout.
 
 Media writes use authenticated owner Fetch routes and 512 KiB chunks, with a 96 MiB per-video cap. Video reads use buffered GET/HEAD request mode; DSH 0.2.2 cannot create a streaming Request body for GET/HEAD. Upload POST routes use streaming mode with their own bound. Do not expose profile paths or make uploaded video a public static resource.
+
+
+Media settings v2 preserve all v1 fields and revisions. Each skin keeps the desktop clip at the original `file`/`name` keys and a separate `mobile` clip and fit. An absent mobile clip resolves to the current desktop URL. Upload and reset requests accept a `device` (`desktop` by default), and garbage collection retains hashes used by either screen of either theme. Startup selects the mobile clip for narrow screens or phone landscape with coarse touch input. Files are not transcoded or resized.
+
+Do not require a local Blob video to decode before uploading. A metadata timeout, local-file access restriction, or browser codec limitation is not proof that the file is invalid on the device that will play it. Uploads remain bounded and container-validated by the owner API; preview errors are advisory and startup playback fails open.

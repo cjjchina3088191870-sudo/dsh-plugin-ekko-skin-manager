@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {playBoot} from '../src/boot-player.mjs';
+import {playBoot,selectBootVideo} from '../src/boot-player.mjs';
 const require=createRequire(process.env.DSH_SKIN_MANAGER_TOOLCHAIN||new URL('../package.json',import.meta.url));
 const {JSDOM}=require('jsdom');
 function fixture(t,{blocked=false,reduced=false}={}){
@@ -36,4 +36,11 @@ test('normal ending fades over a fixed interval and playback has an absolute upp
 test('reduced motion suppresses automatic startup but permits an explicit preview',async t=>{
  const f=fixture(t,{reduced:true});await playBoot('miku',options);assert.equal(f.calls(),0);
  const done=playBoot('miku',options,{preview:true});assert.equal(f.calls(),1);document.querySelector('.ekko-boot-skip').click();await f.tick(500);await done;
+});
+
+
+test('phone startup selects its own video and fit while keeping shared playback preferences',()=>{
+ const entry={...options,file:'wide.mp4',fit:'cover',source:'upload',mobile:{url:'/portrait.webm',file:'portrait.webm',fit:'contain',source:'upload',available:true}};
+ const phone=selectBootVideo(entry,true);assert.equal(phone.url,'/portrait.webm');assert.equal(phone.fit,'contain');assert.equal(phone.volume,.65);assert.equal(phone.device,'mobile');assert.equal(selectBootVideo(entry).url,options.url);assert.equal(entry.url,options.url);
+ const fallback=selectBootVideo({...entry,mobile:{url:options.url,fit:'contain',source:'fallback'}},true);assert.equal(fallback.url,options.url);assert.equal(fallback.source,'fallback');assert.equal(selectBootVideo(undefined,true),undefined);
 });
