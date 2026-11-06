@@ -38,13 +38,28 @@ export async function createMediaStore({directory,resolvePackage}){
  const settingsFile=join(directory,'settings.json');let state={version:2,revision:0,skins:Object.fromEntries(IDS.map(id=>[id,cleanSettings()]))};
  try{const saved=JSON.parse(await readFile(settingsFile,'utf8'));if(![1,2].includes(saved.version)||!Number.isSafeInteger(saved.revision)||saved.revision<0)throw Error('Invalid media settings');state={version:2,revision:saved.revision,skins:Object.fromEntries(IDS.map(id=>[id,cleanSettings(saved.skins?.[id])]))};}catch(e){if(e.code!=='ENOENT')throw e;}
  for(const file of await readdir(directory))if(/^upload-[a-f0-9]{48}\.tmp$/.test(file))await unlink(join(directory,file)).catch(()=>{});
+ // Bundled MP4/WebM are the same clip. Recognize an uploaded copy by its hash,
+ // so its compatible source can be served without replacing the user's file.
+ const packaged=new Map();
+ for(const id of IDS){try{
+  const root=resolvePackage(id),mp4=join(root,'media/boot.mp4'),webm=join(root,'media/boot.webm');
+  if(existsSync(webm))packaged.set(id,{file:createHash('sha256').update(await readFile(mp4)).digest('hex')+'.mp4',webm});
+ }catch{}}
+ const compatible=(id,file)=>{
+  if(!file)return packaged.get(id)?.webm;
+  if(!file.endsWith('.mp4'))return null;
+  const sidecar=join(directory,file+'.compat.webm');
+  if(existsSync(sidecar))return sidecar;
+  return packaged.get(id)?.file===file?packaged.get(id).webm:null;
+ };
  const pending=new Map();let tail=Promise.resolve(),closed=false;
  const available=(id,file)=>{try{const root=resolvePackage(id);return existsSync(file?join(directory,file):join(root,'media/boot.mp4'));}catch{return false;}};
  const clipUrl=(id,device,file)=>'./api/ekko-skins/video?skin='+id+'&device='+device+'&file='+(file||'default');
+ const fallbackUrl=(id,device,file)=>compatible(id,file)?clipUrl(id,device,file)+'&variant=webm':null;
  const snapshot=()=>({version:2,revision:state.revision,skins:Object.fromEntries(IDS.map(id=>{
-  const current=state.skins[id],desktop={...current,available:available(id,current.file),source:current.file?'upload':'default',url:clipUrl(id,'desktop',current.file)};
+  const current=state.skins[id],desktop={...current,available:available(id,current.file),source:current.file?'upload':'default',url:clipUrl(id,'desktop',current.file),fallbackUrl:fallbackUrl(id,'desktop',current.file)};
   const own=current.mobile.file;
-  desktop.mobile={...current.mobile,available:available(id,own||current.file),source:own?'upload':'fallback',inherited:!own,url:clipUrl(id,own?'mobile':'desktop',own||current.file)};
+  desktop.mobile={...current.mobile,available:available(id,own||current.file),source:own?'upload':'fallback',inherited:!own,url:clipUrl(id,own?'mobile':'desktop',own||current.file),fallbackUrl:fallbackUrl(id,own?'mobile':'desktop',own||current.file)};
   return[id,desktop];
  }))});
  const queue=fn=>{const next=tail.then(fn);tail=next.catch(()=>{});return next;};
@@ -54,7 +69,10 @@ export async function createMediaStore({directory,resolvePackage}){
   try{await writeFile(temp,JSON.stringify(next)+'\n',{mode:0o600,flag:'wx'});await rename(temp,settingsFile);}finally{await unlink(temp).catch(()=>{});}
   state=next;
   const used=new Set(IDS.flatMap(id=>[state.skins[id].file,state.skins[id].mobile.file]));
-  for(const file of await readdir(directory))if(mediaName.test(file)&&!used.has(file))await unlink(join(directory,file)).catch(()=>{});
+  for(const file of await readdir(directory)){
+   const original=file.endsWith('.mp4.compat.webm')?file.slice(0,-'.compat.webm'.length):file;
+   if(mediaName.test(original)&&!used.has(original))await unlink(join(directory,file)).catch(()=>{});
+  }
   return snapshot();
  }
  async function discard(id){const item=pending.get(id);if(!item)return;pending.delete(id);await unlink(item.path).catch(()=>{});}
@@ -127,9 +145,12 @@ export async function createMediaStore({directory,resolvePackage}){
   if(!IDS.includes(skin)||!DEVICES.includes(device))throw failure(404,'视频不存在。');
   const current=device==='mobile'?state.skins[skin].mobile:state.skins[skin];
   if(!(file==='default'||mediaName.test(file||'')&&current.file===file))throw failure(404,'视频不存在。');
-  let path;try{path=file==='default'?join(resolvePackage(skin),'media/boot.mp4'):join(directory,file);}catch{throw failure(404,'视频不存在。');}
+  const variant=url.searchParams.get('variant');
+  if(variant&&variant!=='webm')throw failure(404,'视频不存在。');
+  let path;try{path=variant==='webm'?compatible(skin,file==='default'?null:file):(file==='default'?join(resolvePackage(skin),'media/boot.mp4'):join(directory,file));}catch{throw failure(404,'视频不存在。');}
+  if(!path)throw failure(404,'此视频没有备用编码。');
   let info;try{info=await stat(path);}catch{throw failure(404,'视频不存在。');}
-  const range=parseRange(request.headers.get('range'),info.size),headers={'content-type':file?.endsWith('.webm')?'video/webm':'video/mp4','accept-ranges':'bytes','cache-control':'private, no-store','x-content-type-options':'nosniff','cross-origin-resource-policy':'same-origin'};
+  const range=parseRange(request.headers.get('range'),info.size),headers={'content-type':variant==='webm'||file?.endsWith('.webm')?'video/webm':'video/mp4','accept-ranges':'bytes','cache-control':'private, no-store','x-content-type-options':'nosniff','cross-origin-resource-policy':'same-origin'};
   if(range==='unsatisfiable')return new Response(null,{status:416,headers:{...headers,'content-range':'bytes */'+info.size}});
   const start=range?.start||0,end=range?.end??info.size-1;headers['content-length']=String(end-start+1);if(range)headers['content-range']=`bytes ${start}-${end}/${info.size}`;
   return new Response(request.method==='HEAD'?null:Readable.toWeb(createReadStream(path,{start,end,signal:request.signal})),{status:range?206:200,headers});

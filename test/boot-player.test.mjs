@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
-import {playBoot,selectBootVideo} from '../src/boot-player.mjs';
+import {playBoot,selectBootVideo,videoSources} from '../src/boot-player.mjs';
 const require=createRequire(process.env.DSH_SKIN_MANAGER_TOOLCHAIN||new URL('../package.json',import.meta.url));
 const {JSDOM}=require('jsdom');
 function fixture(t,{blocked=false,reduced=false}={}){
@@ -43,4 +43,14 @@ test('phone startup selects its own video and fit while keeping shared playback 
  const entry={...options,file:'wide.mp4',fit:'cover',source:'upload',mobile:{url:'/portrait.webm',file:'portrait.webm',fit:'contain',source:'upload',available:true}};
  const phone=selectBootVideo(entry,true);assert.equal(phone.url,'/portrait.webm');assert.equal(phone.fit,'contain');assert.equal(phone.volume,.65);assert.equal(phone.device,'mobile');assert.equal(selectBootVideo(entry).url,options.url);assert.equal(entry.url,options.url);
  const fallback=selectBootVideo({...entry,mobile:{url:options.url,fit:'contain',source:'fallback'}},true);assert.equal(fallback.url,options.url);assert.equal(fallback.source,'fallback');assert.equal(selectBootVideo(undefined,true),undefined);
+});
+
+
+test('WebM-capable browsers prefer the alternate encoding and fall back to MP4 after a media error',async t=>{
+ const f=fixture(t);f.w.HTMLMediaElement.prototype.canPlayType=()=> 'probably';
+ const done=playBoot('rose',{...options,fallbackUrl:'/compatible.webm'}),video=document.querySelector('.ekko-boot video');assert.equal(video.getAttribute('src'),'/compatible.webm');
+ video.dispatchEvent(new f.w.Event('error'));await f.flush();assert.equal(video.getAttribute('src'),options.url);assert.ok(document.querySelector('.ekko-boot'));
+ video.dispatchEvent(new f.w.Event('playing'));await f.tick(100);assert.equal(document.querySelector('.ekko-boot').style.opacity,'');
+ video.dispatchEvent(new f.w.Event('error'));await f.tick(500);await done;assert.equal(document.querySelector('.ekko-boot'),null);
+ assert.deepEqual(videoSources({url:'/a.mp4',fallbackUrl:'/a.webm'},false),['/a.mp4','/a.webm']);assert.deepEqual(videoSources({url:'/a.mp4',fallbackUrl:'/a.mp4'},true),['/a.mp4']);
 });

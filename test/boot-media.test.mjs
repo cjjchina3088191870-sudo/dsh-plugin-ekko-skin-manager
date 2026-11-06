@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {createMediaStore,CHUNK_SIZE,MAX_VIDEO} from '../src/boot-media.mjs';
 const clip=size=>{const bytes=Buffer.alloc(size,1);bytes.write('ftyp',4);return bytes;};
 async function fixture(t){
- const directory=await mkdtemp(join(tmpdir(),'ekko-media-')),pkg=join(directory,'pkg');await mkdir(join(pkg,'media'),{recursive:true});await writeFile(join(pkg,'media/boot.mp4'),clip(64));
+ const directory=await mkdtemp(join(tmpdir(),'ekko-media-')),pkg=join(directory,'pkg');await mkdir(join(pkg,'media'),{recursive:true});await writeFile(join(pkg,'media/boot.mp4'),clip(64));await writeFile(join(pkg,'media/boot.webm'),Buffer.from([0x1a,0x45,0xdf,0xa3,1,2,3,4,5,6,7,8,9,10,11,12]));
  const options={directory:join(directory,'private'),resolvePackage:()=>pkg};let store=await createMediaStore(options);
  t.after(async()=>{await store.close();await rm(directory,{recursive:true,force:true});});
  const call=(handler,path,data,options={})=>store[handler](new Request('http://localhost/api/ekko-skins/'+path,{method:data!==undefined?'POST':'GET',...data!==undefined?{headers:{'content-type':'application/json'},body:JSON.stringify(data)}:{},...options}));
@@ -79,4 +79,17 @@ test('upgrading version 1 preserves the saved clip, revision, sound, fit and pho
  settings.skins.rose.fit='contain';settings.skins.rose.sound=false;settings.skins.rose.volume=.25;
  await writeFile(join(f.options.directory,'settings.json'),JSON.stringify(settings));
  await f.reopen();const after=f.store.snapshot();assert.equal(after.version,2);assert.equal(after.revision,before.revision);assert.equal(after.skins.rose.file,before.skins.rose.file);assert.equal(after.skins.rose.sound,false);assert.equal(after.skins.rose.volume,.25);assert.equal(after.skins.rose.mobile.fit,'contain');assert.equal(after.skins.rose.mobile.url,after.skins.rose.url);
+});
+
+
+test('compatible WebM reads retain owner routing, range support and uploaded-copy identity',async t=>{
+ const f=await fixture(t);let saved=f.store.snapshot();assert.ok(saved.skins.rose.fallbackUrl.endsWith('variant=webm'));
+ let r=await f.call('video','video?skin=rose&file=default&variant=webm',undefined,{headers:{range:'bytes=0-3'}});assert.equal(r.status,206);assert.equal(r.headers.get('content-type'),'video/webm');assert.equal(Buffer.from(await r.arrayBuffer()).readUInt32BE(0),0x1a45dfa3);
+ await f.upload('rose',clip(64));saved=f.store.snapshot();const file=saved.skins.rose.file;assert.ok(saved.skins.rose.fallbackUrl.includes(file));assert.equal(saved.skins.rose.mobile.fallbackUrl,saved.skins.rose.fallbackUrl);
+ r=await f.call('video','video?skin=rose&file='+file+'&variant=webm');assert.equal(r.status,200);await r.arrayBuffer();
+ await f.upload('miku',clip(40));saved=f.store.snapshot();assert.equal(saved.skins.miku.fallbackUrl,null);
+ assert.equal((await f.call('video','video?skin=miku&file='+saved.skins.miku.file+'&variant=webm')).status,404);
+ assert.equal((await f.call('video','video?skin=rose&file=default&variant=../../settings.json')).status,404);
+ const sidecar=join(f.options.directory,saved.skins.miku.file+'.compat.webm');await writeFile(sidecar,Buffer.from([0x1a,0x45,0xdf,0xa3]));assert.ok(f.store.snapshot().skins.miku.fallbackUrl);
+ await f.call('settings','boot',{skin:'miku',revision:saved.revision,patch:{reset:true}});await assert.rejects(stat(sidecar),/ENOENT/);
 });

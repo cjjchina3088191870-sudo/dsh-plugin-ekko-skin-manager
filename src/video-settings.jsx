@@ -1,5 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
-import {playBoot,selectBootVideo,MOBILE_SCREEN} from './boot-player.mjs';
+import {playBoot,selectBootVideo,MOBILE_SCREEN,videoSources} from './boot-player.mjs';
 const API='./api/ekko-skins/',LIMIT=96*1024*1024;
 const fields=entry=>Object.fromEntries(['enabled','sound','volume','fit','maxSeconds'].map(k=>[k,entry[k]]));
 const draftFrom=entry=>({...fields(entry),mobileFit:entry.mobile?.fit||entry.fit});
@@ -17,14 +17,16 @@ function previewError(video){
 }
 export function VideoSettings({skin}){
  const[data,setData]=useState(null),[draft,setDraft]=useState(null),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[progress,setProgress]=useState(null);
- const[device,setDevice]=useState(()=>window.matchMedia?.(MOBILE_SCREEN).matches?'mobile':'desktop'),[mediaError,setMediaError]=useState('');
+ const[device,setDevice]=useState(()=>window.matchMedia?.(MOBILE_SCREEN).matches?'mobile':'desktop'),[mediaError,setMediaError]=useState(''),[sourceIndex,setSourceIndex]=useState(0);
  const preview=useRef(null),operation=useRef(null),uploadId=useRef(null),alive=useRef(true),input=useRef(null);
  const accept=(value,preserve=false)=>{if(!alive.current)return;setData(value);if(!preserve)setDraft(draftFrom(value.skins[skin]));};
  const load=async()=>{try{accept(await request('boot'));}catch(e){if(alive.current)setMessage(e.message);}};
  const base=data?.skins[skin],entry=selectBootVideo(base,device==='mobile');
+ const sources=videoSources(entry,Boolean(document.createElement('video').canPlayType('video/webm; codecs="vp8, opus"'))),source=sources[sourceIndex]||sources[0];
  useEffect(()=>{alive.current=true;void load();return()=>{alive.current=false;operation.current?.abort();if(uploadId.current)void request('upload?action=cancel&id='+uploadId.current,{method:'POST',...jsonBody({})}).catch(()=>{});};},[skin]);
- useEffect(()=>{setMediaError('');const video=preview.current;return()=>{if(video){video.pause();video.removeAttribute('src');video.load();}};},[entry?.url,device]);
- useEffect(()=>{if(preview.current)preview.current.volume=draft?.volume??.65;},[draft?.volume,entry?.url,device]);
+ useEffect(()=>{setSourceIndex(0);setMediaError('');},[entry?.url,entry?.fallbackUrl,device]);
+ useEffect(()=>{const video=preview.current;return()=>{if(video){video.pause();video.removeAttribute('src');video.load();}};},[source,device]);
+ useEffect(()=>{if(preview.current)preview.current.volume=draft?.volume??.65;},[draft?.volume,source,device]);
  const save=async(reset=false)=>{
   setBusy(true);setMessage('');
   try{
@@ -70,7 +72,7 @@ export function VideoSettings({skin}){
   <div className="ekko-video-device-panel" role="tabpanel" id={'ekko-video-panel-'+skin} aria-labelledby={'ekko-video-tab-'+skin+'-'+device}>
    <p className="ekko-skin-version">{device==='mobile'?'手机及窄屏自动使用此视频，推荐 9:16 竖屏；未上传时沿用电脑端视频。':'电脑及宽屏使用此视频，推荐 16:9 横屏。'}支持其他分辨率与比例。</p>
    <label className="ekko-skin-option"><span>{device==='mobile'?'手机端':'电脑端'}画面显示</span><select aria-label={(device==='mobile'?'手机端':'电脑端')+'画面显示'} value={draft[fitKey]} disabled={busy} onChange={e=>update({[fitKey]:e.target.value})}><option value="cover">铺满屏幕</option><option value="contain">完整显示</option></select></label>
-   <video key={device+entry.url} ref={preview} className="ekko-video-preview" data-device={device} muted={!draft.sound} controls playsInline preload="metadata" onLoadedMetadata={e=>{setMediaError('');const video=e.currentTarget;if(Number.isFinite(video.duration)&&video.duration>0&&video.currentTime===0)video.currentTime=Math.min(.8,video.duration*.1);}} onError={e=>setMediaError(previewError(e.currentTarget))} src={entry.url} aria-label={(device==='mobile'?'手机端':'电脑端')+'启动视频预览'}/>
+   <video key={device+source} ref={preview} className="ekko-video-preview" data-device={device} muted={!draft.sound} controls playsInline preload="metadata" onLoadedMetadata={()=>setMediaError('')} onError={e=>{if(sourceIndex+1<sources.length){setSourceIndex(sourceIndex+1);setMediaError('正在尝试另一种视频编码…');}else setMediaError(previewError(e.currentTarget));}} src={source} aria-label={(device==='mobile'?'手机端':'电脑端')+'启动视频预览'}/>
    <p className="ekko-video-name">{entry.source==='upload'?entry.name:entry.source==='fallback'?'沿用电脑端视频'+(base.name?' · '+base.name:''):'默认启动视频'}</p>
    {mediaError&&<p className="ekko-video-message" role="status">{mediaError}</p>}
   </div>

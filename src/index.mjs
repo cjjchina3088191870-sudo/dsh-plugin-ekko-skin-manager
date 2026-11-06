@@ -17,7 +17,7 @@ export function createHandler({resolvePackage=name=>dirname(require.resolve(name
   const installed=skins.filter(s=>s.available).map(s=>s.id);
   const preferred=['rose','miku','default'].includes(defaultSkin)?defaultSkin:'miku';
   const selected=preferred==='default'||installed.includes(preferred)?preferred:(installed[0]||'default');
-  return{version:'0.2.1',defaultSkin:selected,skins};
+  return{version:'0.2.2',defaultSkin:selected,skins};
  }
  return async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405,{Allow:'GET, HEAD'}).end();return;}
