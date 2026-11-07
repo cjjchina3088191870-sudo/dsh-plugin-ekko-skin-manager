@@ -1,7 +1,7 @@
 {
   "name": "dsh-plugin-ekko-skin-manager",
   "version": "0.2.2",
-  "description": "DeepSeek Harness 皮肤管理器，支持主题切换、手机导航与个性化外观设置",
+  "description": "旧版独立皮肤管理器兼容入口，主题管理已整合到新版主题中；新用户请安装 dsh-plugin-miku-theme",
   "type": "module",
   "main": "./lib/index.js",
   "exports": {
@@ -62,7 +62,7 @@
     "type": "git",
     "url": "git+https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager.git"
   },
-  "homepage": "https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager#readme",
+  "homepage": "https://github.com/cjjchina3088191870-sudo/dsh-plugin-miku-theme#readme",
   "bugs": {
     "url": "https://github.com/cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager/issues"
   },

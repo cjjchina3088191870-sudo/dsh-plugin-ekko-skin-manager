@@ -1,69 +1,34 @@
-# Ekko 皮肤管理器 · DeepSeek Harness
+# Ekko 皮肤管理器 · 旧版兼容入口
 
-新版初音与玫瑰主题已经内置主题管理。首次使用推荐直接安装主题；此独立管理器供已有用户兼容使用，与新版主题共享同一份设置界面。
+**主题管理功能已整合到新版主题中。** 新用户请直接安装 [初音未来主题](https://github.com/cjjchina3088191870-sudo/dsh-plugin-miku-theme)，主题内已包含管理界面、手机导航、外观设置和启动视频功能。
 
-在 DeepSeek Harness 中切换已安装的主题，统一管理手机导航、人物装饰、背景浓度和启动视频。
+本仓库保留旧版兼容与迁移说明。新版主题可独立使用，安装其他兼容主题后，会自动纳入同一管理界面。
 
-## 预览
+## 使用新版主题
 
-![初音主题装饰与手机导航设置](preview/miku-settings.png)
-
-![启动视频设置](preview/startup-settings.png)
-
-## 功能
-
-- 在已安装的主题之间切换，随时恢复默认外观。
-- 分别保存每款主题的装饰和导航偏好。
-- 开关欢迎页装饰、对话人物背景与照片，调整背景浓度。
-- 手机可选左上角按钮与抽屉，或左侧纵向图标栏。
-- 切换主题时保留会话和输入草稿。
-- 每款主题分别设置启动视频的开关、声音、音量和显示方式。
-- 上传自己的 MP4 / WebM（最大 96 MiB），支持预览、恢复默认和随时跳过。
-
-## 安装
-
-适配 DSH 0.2.2-rc.1。首次安装推荐直接使用初音主题：
+适配 DSH 0.2.2-rc.1：
 
 ```sh
 dsh plugin --profile web add github:cjjchina3088191870-sudo/dsh-plugin-miku-theme#main
 ```
 
-已经安装主题时，也可以单独安装管理器：
+重启 DSH 并刷新网页，进入 **账号菜单 → 设置 → Ekko 皮肤** 即可使用。
+
+电脑与手机可以分别上传启动视频，支持 MP4 / WebM、预览、声音控制与不同画面比例。完整介绍和主题预览请查看 [初音未来主题仓库](https://github.com/cjjchina3088191870-sudo/dsh-plugin-miku-theme#readme)。
+
+## 已安装独立管理器的用户
+
+移除独立管理器，再安装当前主题版本：
 
 ```sh
-dsh plugin --profile web add github:cjjchina3088191870-sudo/dsh-plugin-ekko-skin-manager#main
+dsh plugin --profile web remove dsh-plugin-ekko-skin-manager
+dsh plugin --profile web add github:cjjchina3088191870-sudo/dsh-plugin-miku-theme#main
 ```
 
-安装后重启 DSH 并刷新网页。使用其他 profile 时，将命令中的 `web` 替换为对应名称。
+完成后重启 DSH 并刷新网页。主题偏好和已保存的视频会保留；使用其他 profile 时，将 `web` 替换为对应名称。
 
-## 使用
-
-1. 打开 **账号菜单 → 设置 → Ekko 皮肤**。
-2. 选择已安装的主题。
-3. 按喜好调整人物、照片、背景浓度和手机导航方式。
-4. 在“启动视频”中上传自定义视频，调节声音和显示方式；保存后刷新页面生效。
-
-选择 **原生界面** 即可恢复默认外观。每款主题的偏好会分别记住，下次切换回来时继续使用。
-
-[查看初音主题效果](https://github.com/cjjchina3088191870-sudo/dsh-plugin-miku-theme#预览)
-
-## 更新
-
-```sh
-dsh plugin --profile web update dsh-plugin-ekko-skin-manager
-```
-
-更新后重启 DSH 并刷新网页。
+独立管理器 0.2.x 与新版主题可以共用管理界面，但日常使用只安装主题即可。
 
 ## 许可
 
 代码采用 [MIT 许可证](LICENSE)，第三方组件条款见 [第三方许可](THIRD_PARTY_LICENSES)。
-
-
-### 电脑端与手机端视频
-
-启动视频设置提供“电脑端视频”和“手机端视频”两个入口，可以分别上传、预览，并设置铺满屏幕或完整显示。推荐电脑端使用 16:9 横屏、手机端使用 9:16 竖屏，也支持其他分辨率与比例。手机端未单独上传时自动沿用电脑端视频，已保存的启动设置会继续保留。
-
-每个视频支持 MP4 / WebM，最大 96 MiB。本地预览失败不会阻止上传；视频保存后可以在支持对应编码的设备上播放。
-
-内置启动片段同时提供 MP4 与 WebM 编码，浏览器可选择支持的格式，加载失败时自动尝试另一个来源。上传与内置片段完全相同的文件时，也会匹配这份备用编码；其他自定义视频按其原有编码播放。
