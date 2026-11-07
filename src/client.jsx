@@ -4,7 +4,7 @@ import{createController,readSelection,SELECTION_KEY}from'./controller.mjs';
 import{STYLES}from'./generated.mjs';
 import{createMobileNavigation}from'./mobile-navigation.mjs';
 export const inject=['slots','theme','layout'];
-const NAMES={rose:{zh:'有菜玫瑰',en:'Arina Rose'},miku:{zh:'初音未来',en:'Hatsune Miku'}};
+const NAMES={rose:{zh:'玫瑰女王',en:'Rose Queen'},miku:{zh:'初音未来',en:'Hatsune Miku'}};
 const COPY={
  zh:{nav:'Ekko 皮肤',title:'玫瑰与初音',intro:'选择你的创作空间；每个主题的装饰偏好分别保留。',use:'使用',active:'当前使用',switching:'正在切换…',native:'原生界面',options:'主题装饰',artwork:'欢迎页装饰',companion:'对话人物背景',polaroid:'右下角照片',opacity:'对话背景浓度',reset:'恢复此主题默认',loading:'正在加载主题…',unavailable:'可选主题，尚未安装',retry:'重试',loadFailed:'皮肤管理器暂时无法加载，请重试。',materialFailed:'主题素材未能加载，请重试。'},
  en:{nav:'Ekko skins',title:'Rose & Miku',intro:'Choose your creative space. Each skin keeps its own appearance preferences.',use:'Use',active:'In use',switching:'Switching…',native:'Native appearance',options:'Artwork preferences',artwork:'Welcome artwork',companion:'Chat character background',polaroid:'Corner photo',opacity:'Chat background opacity',reset:'Reset this skin',loading:'Loading skins…',unavailable:'Optional skin, not installed',retry:'Retry',loadFailed:'Unable to load the skin manager. Please retry.',materialFailed:'Unable to load the skin artwork. Please retry.'}

@@ -1,4 +1,5 @@
 import {readFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {createHash} from 'node:crypto';
 import {dirname,join} from 'node:path';
@@ -9,15 +10,22 @@ import {toInlineJson} from './vendor/video-route.mjs';
 const require=createRequire(import.meta.url);
 export const PREFIX='/ekko-skins';
 const PACKAGES={rose:'dsh-plugin-rose-theme',miku:'dsh-plugin-miku-theme'};
+export function resolveSkinPackage(resolvePackage,id){
+ if(id==='rose')try{
+  const bundled=join(resolvePackage(PACKAGES.miku),'themes/rose');
+  if(existsSync(join(bundled,'package.json')))return bundled;
+ }catch{}
+ return resolvePackage(PACKAGES[id]);
+}
 export function createHandler({resolvePackage=name=>dirname(require.resolve(name+'/package.json')),defaultSkin='miku'}={}){
  async function catalog(){
   const skins=[];for(const[id,pkg]of Object.entries(PACKAGES)){
-   try{const root=resolvePackage(pkg),meta=JSON.parse(await readFile(join(root,'package.json'),'utf8'));skins.push({id,version:meta.version,available:meta.dsh?.ekkoSkinProvider===1,preview:{light:'./ekko-skins/preview/'+id+'/light.webp',dark:'./ekko-skins/preview/'+id+'/dark.webp'}});}catch{skins.push({id,available:false});}
+   try{const root=resolveSkinPackage(resolvePackage,id),meta=JSON.parse(await readFile(join(root,'package.json'),'utf8'));skins.push({id,version:meta.version,available:meta.dsh?.ekkoSkinProvider===1,preview:{light:'./ekko-skins/preview/'+id+'/light.webp',dark:'./ekko-skins/preview/'+id+'/dark.webp'}});}catch{skins.push({id,available:false});}
   }
   const installed=skins.filter(s=>s.available).map(s=>s.id);
   const preferred=['rose','miku','default'].includes(defaultSkin)?defaultSkin:'miku';
   const selected=preferred==='default'||installed.includes(preferred)?preferred:(installed[0]||'default');
-  return{version:'0.2.2',defaultSkin:selected,skins};
+  return{version:'0.3.0',defaultSkin:selected,skins};
  }
  return async(req,res)=>{
   if(!['GET','HEAD'].includes(req.method)){res.writeHead(405,{Allow:'GET, HEAD'}).end();return;}
@@ -29,7 +37,7 @@ export function createHandler({resolvePackage=name=>dirname(require.resolve(name
   if(!match){res.writeHead(404).end();return;}
   const[,kind,id,file]=match;let bytes;
   try{
-   const root=resolvePackage(PACKAGES[id]);
+   const root=resolveSkinPackage(resolvePackage,id);
    if(kind==='assets'){
     if(!/^[a-f0-9]{64}\.(webp|png|svg|woff2)$/.test(file)){res.writeHead(404).end();return;}
     // Read the current allowlist so updating artwork does not need a host restart.
@@ -55,7 +63,7 @@ export function apply(ctx,config={}){
  ctx.inject(['webServer','profileContext','connection'],async child=>{
   const profile=child.get('profileContext'),resolver=createRequire(pathToFileURL(join(profile.dir,'package.json')));
   const resolvePackage=name=>dirname(resolver.resolve(name+'/package.json'));
-  const media=await createMediaStore({directory:join(profile.dir,'ekko-skins-media'),resolvePackage:id=>resolvePackage(PACKAGES[id])});
+  const media=await createMediaStore({directory:join(profile.dir,'ekko-skins-media'),resolvePackage:id=>resolveSkinPackage(resolvePackage,id)});
   child.effect(()=>()=>media.close(),'ekko-skins: private media store');
   child.effect(()=>child.get('webServer').register({kind:'prefix',path:PREFIX,handler:createHandler({defaultSkin:config.defaultSkin,resolvePackage})}));
   for(const [path,methods,fetch,requestBody]of [

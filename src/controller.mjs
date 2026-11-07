@@ -48,6 +48,8 @@ export function createController({storage,mount,prepare=async()=>{},fallback='ro
   subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
   register(provider){
    if(!['rose','miku'].includes(provider.id)||typeof provider.plugin?.apply!=='function')throw new TypeError('Unknown Ekko skin provider');
+   const existing=providers.get(provider.id);
+   if(existing&&(existing.priority||0)>(provider.priority||0))return()=>{};
    providers.set(provider.id,provider);publish({});
    if(initialized&&provider.id===wanted)void reconcile();
    return()=>{if(providers.get(provider.id)!==provider)return;providers.delete(provider.id);publish({});if(provider.id===wanted||runtime?.provider===provider)void reconcile();};
