@@ -59,7 +59,7 @@ export function VideoSettings({skin}){
  if(!data||!draft)return <section className="ekko-skin-options ekko-video-settings" data-testid="ekko-video-settings"><h3>启动视频</h3><p role="status">{message||'正在读取视频设置…'}</p><button type="button" className="ekko-skin-button" onClick={load}>重试</button></section>;
  const update=patch=>setDraft({...draft,...patch}),fitKey=device==='mobile'?'mobileFit':'fit';
  return <section className="ekko-skin-options ekko-video-settings" data-testid="ekko-video-settings" data-device={device}>
-  <div className="ekko-skin-toolbar"><h3>{skin==='miku'?'初音未来':'玫瑰女王'} · 启动视频</h3><span className="ekko-skin-version">每款主题分别保存</span></div>
+  <div className="ekko-skin-toolbar"><h3>{skin==='skirk'?'丝柯克 · 磷星环轨':skin==='miku'?'初音未来':'玫瑰女王'} · 启动视频</h3><span className="ekko-skin-version">每款主题分别保存</span></div>
   <div className="ekko-video-controls">
    <label className="ekko-skin-option"><span>启用启动视频<small>页面启动时播放，可随时跳过</small></span><input type="checkbox" checked={draft.enabled} disabled={busy} onChange={e=>update({enabled:e.target.checked})}/></label>
    <label className="ekko-skin-option"><span>播放声音<small>浏览器限制自动播放时先静音，点击可开启声音</small></span><input type="checkbox" checked={draft.sound} disabled={busy} onChange={e=>update({sound:e.target.checked})}/></label>

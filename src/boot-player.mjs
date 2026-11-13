@@ -81,8 +81,8 @@ export function playBoot(skin,options,{preview=false}={}){
 }
 export function bootOnce({defaultSkin='miku'}={}){
  if(window.__EKKO_BOOT_STARTED__)return;window.__EKKO_BOOT_STARTED__=true;
- let skin=defaultSkin;try{const saved=JSON.parse(localStorage.getItem('dsh:ekko-skins:selection:v1'));if(saved?.version===1&&['rose','miku','default'].includes(saved.skin))skin=saved.skin;}catch{}
- if(!['rose','miku'].includes(skin))return;
+ let skin=defaultSkin;try{const saved=JSON.parse(localStorage.getItem('dsh:ekko-skins:selection:v1'));if(saved?.version===1&&['rose','miku','skirk','default'].includes(saved.skin))skin=saved.skin;}catch{}
+ if(!['rose','miku','skirk'].includes(skin))return;
  void(async()=>{try{
   const response=await fetch('./api/ekko-skins/boot',{credentials:'same-origin',signal:AbortSignal.timeout(3000)});
   if(!response.ok)return;const state=await response.json();await playBoot(skin,selectBootVideo(state.skins?.[skin],Boolean(window.matchMedia?.(MOBILE_SCREEN).matches)));

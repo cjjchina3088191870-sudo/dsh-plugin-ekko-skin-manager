@@ -4,10 +4,10 @@ import{createController,readSelection,SELECTION_KEY}from'./controller.mjs';
 import{STYLES}from'./generated.mjs';
 import{createMobileNavigation}from'./mobile-navigation.mjs';
 export const inject=['slots','theme','layout'];
-const NAMES={rose:{zh:'玫瑰女王',en:'Rose Queen'},miku:{zh:'初音未来',en:'Hatsune Miku'}};
+const NAMES={rose:{zh:'玫瑰女王',en:'Rose Queen'},miku:{zh:'初音未来',en:'Hatsune Miku'},skirk:{zh:'丝柯克 · 磷星环轨',en:'Skirk · Stellar Orbit'}};
 const COPY={
- zh:{nav:'Ekko 皮肤',title:'玫瑰与初音',intro:'选择你的创作空间；每个主题的装饰偏好分别保留。',use:'使用',active:'当前使用',switching:'正在切换…',native:'原生界面',options:'主题装饰',artwork:'欢迎页装饰',companion:'对话人物背景',polaroid:'右下角照片',opacity:'对话背景浓度',reset:'恢复此主题默认',loading:'正在加载主题…',unavailable:'可选主题，尚未安装',retry:'重试',loadFailed:'皮肤管理器暂时无法加载，请重试。',materialFailed:'主题素材未能加载，请重试。'},
- en:{nav:'Ekko skins',title:'Rose & Miku',intro:'Choose your creative space. Each skin keeps its own appearance preferences.',use:'Use',active:'In use',switching:'Switching…',native:'Native appearance',options:'Artwork preferences',artwork:'Welcome artwork',companion:'Chat character background',polaroid:'Corner photo',opacity:'Chat background opacity',reset:'Reset this skin',loading:'Loading skins…',unavailable:'Optional skin, not installed',retry:'Retry',loadFailed:'Unable to load the skin manager. Please retry.',materialFailed:'Unable to load the skin artwork. Please retry.'}
+ zh:{nav:'Ekko 皮肤',title:'Ekko 创作空间',intro:'选择你的创作空间；每个主题的装饰偏好分别保留。',use:'使用',active:'当前使用',switching:'正在切换…',native:'原生界面',options:'主题装饰',artwork:'欢迎页装饰',companion:'对话人物背景',polaroid:'右下角照片',opacity:'对话背景浓度',reset:'恢复此主题默认',loading:'正在加载主题…',unavailable:'可选主题，尚未安装',retry:'重试',loadFailed:'皮肤管理器暂时无法加载，请重试。',materialFailed:'主题素材未能加载，请重试。'},
+ en:{nav:'Ekko skins',title:'Ekko creative spaces',intro:'Choose your creative space. Each skin keeps its own appearance preferences.',use:'Use',active:'In use',switching:'Switching…',native:'Native appearance',options:'Artwork preferences',artwork:'Welcome artwork',companion:'Chat character background',polaroid:'Corner photo',opacity:'Chat background opacity',reset:'Reset this skin',loading:'Loading skins…',unavailable:'Optional skin, not installed',retry:'Retry',loadFailed:'Unable to load the skin manager. Please retry.',materialFailed:'Unable to load the skin artwork. Please retry.'}
 };
 const language=()=>/^zh/i.test(document.documentElement.lang||navigator.language)?'zh':'en';
 export function apply(ctx){
@@ -47,7 +47,7 @@ export function apply(ctx){
    <header className="ekko-skins-intro"><h2>{c.title}</h2><p>{c.intro}</p></header>
    {state.error&&<div className="ekko-skin-error" role="alert">{state.error} <button type="button" className="ekko-skin-button" onClick={load}>{c.retry}</button></div>}
    {!state.catalog&&!state.error&&<p role="status">{c.loading}</p>}
-   <div className="ekko-skin-grid">{['rose','miku'].map(skin=>{
+   <div className="ekko-skin-grid">{['rose','miku','skirk'].map(skin=>{
     const entry=state.catalog?.skins.find(s=>s.id===skin),name=NAMES[skin][lang],active=id===skin,available=entry?.available&&p.available.includes(skin);
     return <article key={skin} className="ekko-skin-card" data-active={active}>
      {entry?.preview&&<img className="ekko-skin-cover" src={entry.preview[document.body.hasAttribute('data-ds-dark-theme')?'dark':'light']} alt={name} loading="lazy"/>}
@@ -59,9 +59,9 @@ export function apply(ctx){
    })}</div>
    <div className="ekko-skin-toolbar"><span>{p.busy?c.switching:(id==='default'?c.native:NAMES[id]?.[lang])}</span><button type="button" className="ekko-skin-button" disabled={id==='default'||p.busy} onClick={()=>choose('default')}>{c.native}</button></div>
    {p.error&&<div className="ekko-skin-error" role="alert">{p.error}<button type="button" className="ekko-skin-button" onClick={()=>choose(p.desired)}>{c.retry}</button></div>}
-   {prefs&&<div className="ekko-skin-options"><div className="ekko-skin-toolbar"><h3>{NAMES[id][lang]} · {c.options}</h3><button type="button" className="ekko-skin-button" disabled={p.busy} onClick={()=>setPreference(id,{artwork:true,companion:true,polaroid:true,opacity:.12,mobileNav:'corner'})}>{c.reset}</button></div>
-    <label className="ekko-skin-option"><span>{lang==='zh'?'手机导航方式':'Phone navigation'}<small>{lang==='zh'?'竖屏手机生效，两个主题分别保存':'Portrait phones; saved separately for each skin'}</small></span><select aria-label={lang==='zh'?'手机导航方式':'Phone navigation'} value={prefs.mobileNav||'corner'} disabled={p.busy} onChange={e=>setPreference(id,{mobileNav:e.target.value})}><option value="corner">{lang==='zh'?'左上角按钮 + 抽屉':'Corner button + drawer'}</option><option value="rail">{lang==='zh'?'左侧纵向图标栏':'Vertical icon rail'}</option></select></label>
-    {['artwork','companion','polaroid'].map(key=><label className="ekko-skin-option" key={key}><span>{c[key]}</span><input type="checkbox" checked={prefs[key]} disabled={p.busy} onChange={e=>setPreference(id,{[key]:e.target.checked})}/></label>)}
+   {prefs&&<div className="ekko-skin-options"><div className="ekko-skin-toolbar"><h3>{NAMES[id][lang]} · {c.options}</h3><button type="button" className="ekko-skin-button" disabled={p.busy} onClick={()=>setPreference(id,provider.defaults||{artwork:true,companion:true,polaroid:true,opacity:.12,mobileNav:'corner'})}>{c.reset}</button></div>
+    <label className="ekko-skin-option"><span>{lang==='zh'?'手机导航方式':'Phone navigation'}<small>{lang==='zh'?'竖屏手机生效，各主题分别保存':'Portrait phones; saved separately for each skin'}</small></span><select aria-label={lang==='zh'?'手机导航方式':'Phone navigation'} value={prefs.mobileNav||'corner'} disabled={p.busy} onChange={e=>setPreference(id,{mobileNav:e.target.value})}><option value="corner">{lang==='zh'?'左上角按钮 + 抽屉':'Corner button + drawer'}</option><option value="rail">{lang==='zh'?'左侧纵向图标栏':'Vertical icon rail'}</option></select></label>
+    {['artwork','companion',...(id==='skirk'?[]:['polaroid'])].map(key=><label className="ekko-skin-option" key={key}><span>{c[key]}</span><input type="checkbox" checked={prefs[key]} disabled={p.busy} onChange={e=>setPreference(id,{[key]:e.target.checked})}/></label>)}
     <label className="ekko-skin-option"><span>{c.opacity}<small>{Math.round(prefs.opacity*100)}%</small></span><input type="range" min=".04" max=".24" step=".01" value={prefs.opacity} disabled={p.busy} onChange={e=>setPreference(id,{opacity:Number(e.target.value)})}/></label>
    </div>}
    {prefs&&<VideoSettings key={id} skin={id}/>}

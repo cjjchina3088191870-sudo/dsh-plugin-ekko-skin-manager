@@ -5,7 +5,7 @@ import {join,basename} from 'node:path';
 import {createHash,randomBytes} from 'node:crypto';
 import {parseRange} from './vendor/video-route.mjs';
 export const MAX_VIDEO=96*1024*1024,CHUNK_SIZE=512*1024;
-const IDS=['rose','miku'],DEVICES=['desktop','mobile'];
+const IDS=['rose','miku','skirk'],DEVICES=['desktop','mobile'];
 const defaults={enabled:true,sound:true,volume:.65,fit:'cover',maxSeconds:30,file:null,name:null};
 const mediaName=/^[a-f0-9]{64}\.(mp4|webm)$/;
 const failure=(status,message)=>Object.assign(Error(message),{status});

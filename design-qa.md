@@ -52,3 +52,13 @@ H.264 1280×720 MP4 与 270×480 WebM 已在 Chromium 桌面及 393×760 手机�
 ### 2026-11-07 · 启动片段的备用编码
 
 内置片段增加 VP8/Opus WebM，与原 MP4 保持同一内容；上传相同文件时通过内容哈希匹配备用编码。浏览器可以选择可用编码，媒体加载失败会尝试另一源，预览不再自动跳到 0.8 秒。核心 22 项通过；通过 HTTPS 网关访问已保存的视频，桌面和手机模拟视口均确认时间前进及可见动画，并验证屏蔽 WebM 后 MP4 回退仍正常。尚未在用户出现故障的实际设备上复现其原始错误。
+
+## 2026-11-13 — third-theme compatibility release 0.3.1
+
+The legacy compatibility entry and the integrated bundle share the same root-scoped `client-v2` and `host-v2` leases. The first loaded entry owns the manager. Version0.3.0 only knew Rose/Miku and rejected a Skirk provider if it loaded before the new bundle.
+
+The standalone core now mirrors the bundle's three-theme controller, UI, catalog/assets/preview routes, startup-video store/player and theme preferences. Its own package identity, migration command and shared lease entries remain. README now requires compatibility entry0.3.1+ for the three-theme suite; new users still install only the theme bundle.
+
+Regression evidence: test/skirk-compat.test.mjs evaluates both independently built client bundles in one DOM, loads the standalone manager first, then registers all three theme providers. It verifies exactly one shared client, selected Skirk, continued service after the first lease is removed, and release after the last lease. An HTTP test verifies all three bundled themes, Skirk artwork/font/preview routes and independent Skirk mobile fit settings. These are contract/JSDOM/HTTP checks, not a full DSH browser install.
+
+Full manager suite:22 passed,0 failed,2 existing native-runtime tests skipped because DSH_MODULES was not supplied. Log: work/rose-queen-release/manager-compat-tests.log.

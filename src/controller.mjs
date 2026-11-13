@@ -1,5 +1,5 @@
 export const SELECTION_KEY='dsh:ekko-skins:selection:v1';
-export const SKIN_IDS=['default','rose','miku'];
+export const SKIN_IDS=['default','rose','miku','skirk'];
 export function readSelection(storage,fallback='rose'){
  try{const value=JSON.parse(storage.getItem(SELECTION_KEY));if(value?.version===1&&SKIN_IDS.includes(value.skin))return value.skin;}catch{}
  const old={};for(const id of ['rose','miku'])try{old[id]=JSON.parse(storage.getItem('dsh:ekko-'+id+':v1'))?.enabled;}catch{}
@@ -47,9 +47,7 @@ export function createController({storage,mount,prepare=async()=>{},fallback='ro
   getSnapshot:()=>snapshot,
   subscribe(fn){listeners.add(fn);return()=>listeners.delete(fn);},
   register(provider){
-   if(!['rose','miku'].includes(provider.id)||typeof provider.plugin?.apply!=='function')throw new TypeError('Unknown Ekko skin provider');
-   const existing=providers.get(provider.id);
-   if(existing&&(existing.priority||0)>(provider.priority||0))return()=>{};
+   if(!['rose','miku','skirk'].includes(provider.id)||typeof provider.plugin?.apply!=='function')throw new TypeError('Unknown Ekko skin provider');
    providers.set(provider.id,provider);publish({});
    if(initialized&&provider.id===wanted)void reconcile();
    return()=>{if(providers.get(provider.id)!==provider)return;providers.delete(provider.id);publish({});if(provider.id===wanted||runtime?.provider===provider)void reconcile();};
