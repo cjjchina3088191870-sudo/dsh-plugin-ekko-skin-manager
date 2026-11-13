@@ -12,12 +12,13 @@ export function readSelection(storage,fallback='rose'){
 /** One serial owner of theme presentation lifetimes; host plugin enablement is not selection. */
 export function createController({storage,mount,prepare=async()=>{},fallback='rose'}){
  const providers=new Map(),listeners=new Set();
- let wanted=readSelection(storage,fallback),persistWanted=true,runtime=null,epoch=0,closed=false,initialized=false,tail=Promise.resolve();
+ let wanted=readSelection(storage,fallback),persistWanted=true,runtime=null,epoch=0,closed=false,initialized=false,tail=Promise.resolve(),preparation=null;
  let snapshot={selected:'default',desired:wanted,busy:false,error:null,available:[]};
  const publish=value=>{snapshot={...snapshot,...value,available:[...providers.keys()]};for(const fn of listeners)fn();};
  async function release(){const previous=runtime;runtime=null;if(previous)await previous.handle.dispose();}
  function reconcile(){
   if(closed)return Promise.resolve();
+  preparation?.abort();preparation=null;
   const ticket=++epoch,target=wanted,persist=persistWanted;
   publish({desired:target,busy:true,error:null});
   tail=tail.catch(()=>{}).then(async()=>{
@@ -28,7 +29,7 @@ export function createController({storage,mount,prepare=async()=>{},fallback='ro
     return; // A provider can arrive after the manager or during HMR.
    }
    if(runtime?.provider!==provider||target==='default'){
-    if(provider)await prepare(provider);
+    if(provider){const request=new AbortController();preparation=request;try{await prepare(provider,{signal:request.signal});}finally{if(preparation===request)preparation=null;}}
     if(closed||ticket!==epoch)return;
     await release();
     if(closed||ticket!==epoch)return;
@@ -62,6 +63,6 @@ export function createController({storage,mount,prepare=async()=>{},fallback='ro
   },
   provider:id=>providers.get(id),
   settled:()=>tail,
-  async dispose(){if(closed)return;closed=true;++epoch;await tail.catch(()=>{});await release();listeners.clear();providers.clear();}
+  async dispose(){if(closed)return;closed=true;++epoch;preparation?.abort();await tail.catch(()=>{});await release();listeners.clear();providers.clear();}
  };
 }

@@ -31,21 +31,21 @@ export function createHandler({resolvePackage=name=>dirname(require.resolve(name
    const bytes=Buffer.from(JSON.stringify(await catalog()));res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store','Content-Length':bytes.length,'X-Content-Type-Options':'nosniff'});res.end(req.method==='HEAD'?undefined:bytes);return;
   }
   const match=/^\/ekko-skins\/(assets|preview)\/(rose|miku|skirk)\/([a-z0-9.-]+)$/.exec(pathname);
-  if(!match){res.writeHead(404).end();return;}
+  if(!match){res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
   const[,kind,id,file]=match;let bytes;
   try{
    const root=resolveSkinPackage(resolvePackage,id);
    if(kind==='assets'){
-    if(!/^[a-f0-9]{64}\.(webp|png|svg|woff2)$/.test(file)){res.writeHead(404).end();return;}
+    if(!/^[a-f0-9]{64}\.(webp|png|svg|woff2)$/.test(file)){res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
     // Read the current allowlist so updating artwork does not need a host restart.
     const manifest=JSON.parse(await readFile(join(root,id==='skirk'?'assets/skirk/manifest.json':'assets/manifest.json'),'utf8'));
-    if(!Object.values(manifest).includes(file)){res.writeHead(404).end();return;}
+    if(!Object.values(manifest).includes(file)){res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
     bytes=await readFile(join(root,id==='skirk'?'assets/skirk/runtime':'assets/runtime',file));
    }else{
-    if(!['light.webp','dark.webp'].includes(file)){res.writeHead(404).end();return;}
+    if(!['light.webp','dark.webp'].includes(file)){res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
     bytes=await readFile(join(root,id==='skirk'?'preview/skirk':'preview',file));
    }
-  }catch{res.writeHead(404).end();return;}
+  }catch{res.writeHead(404,{'Cache-Control':'no-store'}).end();return;}
   const etag='"'+createHash('sha256').update(bytes).digest('hex')+'"';
   const type=file.endsWith('.svg')?'image/svg+xml':file.endsWith('.png')?'image/png':file.endsWith('.woff2')?'font/woff2':'image/webp';
   const headers={'Content-Type':type,'Cache-Control':kind==='assets'?'public, max-age=31536000, immutable':'no-cache',ETag:etag,'X-Content-Type-Options':'nosniff','Cross-Origin-Resource-Policy':'same-origin'};

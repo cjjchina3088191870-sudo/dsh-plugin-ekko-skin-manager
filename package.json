@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-ekko-skin-manager",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "旧版独立皮肤管理器兼容入口，兼容初音未来、玫瑰女王与丝柯克三主题及独立启动视频；新用户请安装 dsh-plugin-miku-theme",
   "type": "module",
   "main": "./lib/index.js",
